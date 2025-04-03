@@ -10,10 +10,16 @@ import SwiftUI
 struct ContentView: View {
     var body: some View {
         VStack {
-            Button("Hora de acostares"){
-                print("button action")
-            }.frame(width: 200, height: 150).background(.colo)
+            Text("Hora para acostarse").underline()
             Image("clock")
+            Text("Quiero acostarme a:")
+            HStack{
+                Button(action:{print("button1")}, label:
+                        {Text("Hora")}).frame(width: 150, height: 100)
+                Button(action:{print("button1")}, label:
+                        {Text("Minuto")}).frame(width: 150, height: 100)
+                
+            }
         }
         .padding()
     }
