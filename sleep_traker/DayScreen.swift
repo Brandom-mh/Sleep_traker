@@ -8,8 +8,11 @@ struct DayScreen: View {
     @State private var showTimePicker = false
     @State private var showSleepOptions = false
 
+    // Nueva variable para modo noche
+    @State private var isNight = false
+
     @State private var currentDate = Date()
-    let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
 
     let hours = Array(0...23)
     let minutes = Array(0...59)
@@ -29,13 +32,18 @@ struct DayScreen: View {
 
                 VStack(spacing: 20) {
                     if !showSleepOptions {
-                        Text("Hora para despertarse")
+                        Text(isNight ? "Hora para dormir" :"Hora para despertarse")
                             .font(.system(size: geometry.size.width * 0.06))
                             .fontWeight(.bold)
                             .foregroundColor(.white)
                             .padding()
                             .background(Color.orange)
                             .cornerRadius(15)
+                        
+                        // Toggle para cambiar modo noche
+                        Toggle("Modo Noche", isOn: $isNight)
+                            .padding(.horizontal)
+                            .toggleStyle(SwitchToggleStyle(tint: .orange))
                     }
 
                     // Reloj análogo
@@ -77,7 +85,7 @@ struct DayScreen: View {
                             .font(.system(size: geometry.size.width * 0.05))
                             .foregroundColor(.white)
 
-                        // Botón para abrir sheet
+                        // Botón para abrir sheet de hora
                         Button(action: {
                             showTimePicker = true
                         }) {
@@ -94,6 +102,7 @@ struct DayScreen: View {
                     Button(action: {
                         withAnimation {
                             showSleepOptions.toggle()
+                            if !showSleepOptions { selectedCycle = nil }
                         }
                     }) {
                         Text(showSleepOptions ? "Volver" : "Ver opciones")
@@ -108,9 +117,66 @@ struct DayScreen: View {
                     .padding(.top, 10)
 
                     if showSleepOptions {
-                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                            ForEach(1...6, id: \.self) { cycle in
-                                if selectedCycle == nil || selectedCycle == cycle {
+                        if let selected = selectedCycle {
+                            VStack {
+                                Button(action: {
+                                    // Acción opcional al pulsar la opción seleccionada
+                                }) {
+                                    VStack {
+                                        Text(calculateSleepTime(for: selected))
+                                            .font(.title3)
+                                            .fontWeight(.bold)
+                                            .foregroundColor(.black)
+
+                                        Text("Hora a la que debes dormir para\n\(selected) ciclo\(selected > 1 ? "s" : "")")
+                                            .font(.caption)
+                                            .foregroundColor(.black)
+                                            .multilineTextAlignment(.center)
+
+                                        VStack(spacing: 10) {
+                                            Text("¿Confirmar hora de dormir a las \(calculateSleepTime(for: selected))?")
+                                                .foregroundColor(.black)
+                                                .multilineTextAlignment(.center)
+
+                                            HStack(spacing: 20) {
+                                                Button("Sí") {
+                                                    // Acción de confirmación futura
+                                                }
+                                                .padding(.horizontal)
+                                                .padding(.vertical, 8)
+                                                .foregroundColor(.white)
+                                                .background(Color.green)
+                                                .cornerRadius(10)
+
+                                                Button("No") {
+                                                    withAnimation {
+                                                        selectedCycle = nil
+                                                    }
+                                                }
+                                                .padding(.horizontal)
+                                                .padding(.vertical, 8)
+                                                .foregroundColor(.white)
+                                                .background(Color.red)
+                                                .cornerRadius(10)
+                                            }
+                                        }
+                                        .padding(.top)
+                                    }
+                                    .padding()
+                                    .frame(maxWidth: geometry.size.width * 0.8)
+                                    .background(Color.white)
+                                    .overlay(RoundedRectangle(cornerRadius: 15).stroke(Color.orange, lineWidth: 2))
+                                    .cornerRadius(15)
+                                    .scaleEffect(1.15)
+                                }
+                                .transition(.opacity.combined(with: .scale))
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .transition(.opacity.combined(with: .scale))
+                        } else {
+                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 15) {
+                                ForEach(1...6, id: \.self) { cycle in
                                     Button(action: {
                                         withAnimation {
                                             selectedCycle = cycle
@@ -126,59 +192,25 @@ struct DayScreen: View {
                                                 .font(.caption)
                                                 .foregroundColor(.black)
                                                 .multilineTextAlignment(.center)
-
-                                            if selectedCycle == cycle {
-                                                VStack(spacing: 10) {
-                                                    Text("¿Confirmar hora de dormir a las \(calculateSleepTime(for: cycle))?")
-                                                        .foregroundColor(.black)
-                                                        .multilineTextAlignment(.center)
-
-                                                    HStack(spacing: 20) {
-                                                        Button("Sí") {
-                                                            // Acción de confirmación futura
-                                                        }
-                                                        .padding(.horizontal)
-                                                        .padding(.vertical, 8)
-                                                        .foregroundColor(.white)
-                                                        .background(Color.green)
-                                                        .cornerRadius(10)
-
-                                                        Button("No") {
-                                                            withAnimation {
-                                                                selectedCycle = nil
-                                                            }
-                                                        }
-                                                        .padding(.horizontal)
-                                                        .padding(.vertical, 8)
-                                                        .foregroundColor(.white)
-                                                        .background(Color.red)
-                                                        .cornerRadius(10)
-                                                    }
-                                                }
-                                                .padding(.top)
-                                            }
                                         }
                                         .padding()
-                                        .frame(maxWidth: .infinity)
+                                        .frame(maxWidth: geometry.size.width * 0.25)
                                         .background(Color.white)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 15)
-                                                .stroke(Color.orange, lineWidth: 2)
-                                        )
+                                        .overlay(RoundedRectangle(cornerRadius: 15).stroke(Color.orange, lineWidth: 2))
                                         .cornerRadius(15)
-                                        .scaleEffect(selectedCycle == cycle ? 1.1 : 1.0)
                                     }
                                     .transition(.opacity.combined(with: .scale))
                                 }
                             }
+                            .padding()
+                            .transition(.opacity.combined(with: .scale))
                         }
-                        .padding()
-                        .transition(.opacity.combined(with: .scale))
                     }
                 }
                 .padding()
                 .animation(.easeInOut(duration: 0.3), value: showSleepOptions)
             }
+            .frame(width: geometry.size.width, height: geometry.size.height, alignment: .center)
             .onReceive(timer) { input in
                 currentDate = input
             }
@@ -239,6 +271,30 @@ struct DayScreen: View {
     }
 }
 
+struct MainView: View {
+    var body: some View {
+        TabView {
+            DayScreen()
+                .tabItem {
+                    Image("tab_calendario")
+                        .renderingMode(.original)
+                    Text("Calendario")
+                }
+                .tag(0)
+            
+            Text("Cálculo de ciclo")
+                .tabItem {
+                    Image("tab_ciclo")
+                        .renderingMode(.original)
+                    Text("Cálculo de ciclo")
+                }
+                .tag(1)
+        }
+        .tabViewStyle(DefaultTabViewStyle()) // Fuerza el estilo clásico en iPhone
+        .accentColor(.orange)
+    }
+}
+
 #Preview {
-    DayScreen()
+    MainView()
 }
