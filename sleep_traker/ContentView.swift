@@ -12,7 +12,7 @@ struct ContentView: View {
         VStack {
             Button("Hora de acostares"){
                 print("button action")
-            }.frame(width: 200, height: 150).background(.colo)
+            }.frame(width: 200, height: 150)
             Image("clock")
         }
         .padding()
