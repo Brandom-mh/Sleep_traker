@@ -5,6 +5,7 @@ struct DayScreen: View {
     @State private var selectedMinute = 30
 
     @State private var showTimePicker = false
+    @State private var showSleepOptions = false
 
     @State private var currentDate = Date()
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
@@ -26,13 +27,15 @@ struct DayScreen: View {
                     .ignoresSafeArea()
 
                 VStack(spacing: 20) {
-                    Text("Hora para despertarse")
-                        .font(.system(size: geometry.size.width * 0.06))
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                        .padding()
-                        .background(Color.orange)
-                        .cornerRadius(15)
+                    if !showSleepOptions {
+                        Text("Hora para despertarse")
+                            .font(.system(size: geometry.size.width * 0.06))
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                            .padding()
+                            .background(Color.orange)
+                            .cornerRadius(15)
+                    }
 
                     // Reloj análogo
                     ZStack {
@@ -50,47 +53,47 @@ struct DayScreen: View {
                             .frame(width: 6, height: geometry.size.width * 0.05)
                             .offset(y: -geometry.size.width * 0.03)
                             .rotationEffect(Angle.degrees(Double(hour % 12) * 30 + Double(minute) * 0.5))
-                            .animation(.easeInOut(duration: 0.2), value: hour + minute)
 
                         Rectangle()
                             .fill(Color.black)
                             .frame(width: 4, height: geometry.size.width * 0.08)
                             .offset(y: -geometry.size.width * 0.04)
                             .rotationEffect(Angle.degrees(Double(minute) * 6))
-                            .animation(.easeInOut(duration: 0.2), value: minute)
 
                         Rectangle()
                             .fill(Color.black)
                             .frame(width: 2, height: geometry.size.width * 0.09)
                             .offset(y: -geometry.size.width * 0.05)
                             .rotationEffect(Angle.degrees(Double(second) * 6))
-                            .animation(.linear(duration: 0.1), value: second)
 
                         Circle()
                             .fill(Color.red)
                             .frame(width: 10, height: 10)
                     }
 
-                    Text("Quiero despertarme a")
-                        .font(.system(size: geometry.size.width * 0.05))
-                        .foregroundColor(.white)
-
-                    // Botón para abrir sheet
-                    Button(action: {
-                        showTimePicker = true
-                    }) {
-                        Text("\(String(format: "%02d", selectedHour)) : \(String(format: "%02d", selectedMinute))")
-                            .font(.title3)
+                    if !showSleepOptions {
+                        Text("Quiero despertarme a")
+                            .font(.system(size: geometry.size.width * 0.05))
                             .foregroundColor(.white)
-                            .padding()
-                            .background(Color.orange)
-                            .cornerRadius(15)
+
+                        // Botón para abrir sheet
+                        Button(action: {
+                            showTimePicker = true
+                        }) {
+                            Text("\(String(format: "%02d", selectedHour)) : \(String(format: "%02d", selectedMinute))")
+                                .font(.title3)
+                                .foregroundColor(.white)
+                                .padding()
+                                .background(Color.orange)
+                                .cornerRadius(15)
+                        }
                     }
 
+                    // Botón "Ver opciones / Volver"
                     Button(action: {
-                        print("⏰ Hora seleccionada: \(selectedHour):\(selectedMinute)")
+                        showSleepOptions.toggle()
                     }) {
-                        Text("Ver opciones")
+                        Text(showSleepOptions ? "Volver" : "Ver opciones")
                             .font(.headline)
                             .foregroundColor(.white)
                             .padding(.horizontal, 30)
@@ -100,6 +103,32 @@ struct DayScreen: View {
                             .shadow(radius: 5)
                     }
                     .padding(.top, 10)
+
+                    if showSleepOptions {
+                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+                            ForEach(1...6, id: \.self) { cycle in
+                                VStack {
+                                    Text(calculateSleepTime(for: cycle))
+                                        .font(.title3)
+                                        .fontWeight(.bold)
+                                        .foregroundColor(.black)
+
+                                    Text("Hora a la que debes dormir para\n\(cycle) ciclo\(cycle > 1 ? "s" : "")")
+                                        .font(.caption)
+                                        .foregroundColor(.black)
+                                        .multilineTextAlignment(.center)
+                                }
+                                .padding()
+                                .background(Color.white)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 15)
+                                        .stroke(Color.orange, lineWidth: 2)
+                                )
+                                .cornerRadius(15)
+                            }
+                        }
+                        .padding()
+                    }
                 }
                 .padding()
             }
@@ -146,6 +175,18 @@ struct DayScreen: View {
                 .padding()
             }
         }
+    }
+
+    // Calcula la hora para dormir en base a los ciclos (90 mins cada uno)
+    func calculateSleepTime(for cycles: Int) -> String {
+        let wakeUpDate = Calendar.current.date(bySettingHour: selectedHour, minute: selectedMinute, second: 0, of: Date()) ?? Date()
+        let totalMinutes = -90 * cycles
+        if let sleepDate = Calendar.current.date(byAdding: .minute, value: totalMinutes, to: wakeUpDate) {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "HH:mm"
+            return formatter.string(from: sleepDate)
+        }
+        return "--:--"
     }
 }
 
