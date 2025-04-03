@@ -17,7 +17,6 @@ import SwiftUI
 struct vistaNoche: View {
     var body: some View {
         VStack (spacing:100){
-            textosNoche("Hora para Acostarse")
                 
             Image("clock")
             Text("Quiero acostarme a:").font(.system(size: 40, design: .rounded))
