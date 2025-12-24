@@ -11,7 +11,7 @@ import SwiftUI
 struct sleep_trakerApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            DayScreen()
         }
     }
 }
